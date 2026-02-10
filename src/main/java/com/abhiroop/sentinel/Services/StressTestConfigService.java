@@ -14,7 +14,7 @@ import java.time.Instant;
 public class StressTestConfigService {
     private final StressTestConfigRepository stressTestConfigRepository;
 
-    public StressTestConfig getConfig() {
+    public Mono<StressTestConfig> getConfig() {
         String configId = "global_config";
         return stressTestConfigRepository
                 .findById(configId)
@@ -27,22 +27,21 @@ public class StressTestConfigService {
                                         .isRunning(false)
                                         .build()
                         )
-                )
-                .block();
+                );
     }
 
-    public StressTestConfig saveConfig(StressTestConfig config) {
-        return stressTestConfigRepository.save(config).block();
+    public Mono<StressTestConfig> saveConfig(StressTestConfig config) {
+        return stressTestConfigRepository.save(config);
     }
 
-    public void setIsRunningFalse() {
-        final var config = getConfig();
+    public Mono<StressTestConfig> setIsRunningFalse() {
+        return getConfig().flatMap(config -> {
+            if (!config.isRunning()) return Mono.just(config);
 
-        if (!config.isRunning()) return;
+            final var updatedConfig = config.toBuilder().isRunning(false).build();
 
-        final var updatedConfig = config.toBuilder().isRunning(false).build();
-
-        saveConfig(updatedConfig);
+            return saveConfig(updatedConfig);
+        });
     }
 
 }

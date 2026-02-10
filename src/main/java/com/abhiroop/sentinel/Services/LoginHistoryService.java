@@ -3,14 +3,21 @@ package com.abhiroop.sentinel.Services;
 import com.abhiroop.sentinel.Repository.LoginHistoryRepository;
 import com.abhiroop.sentinel.entity.LoginHistory;
 import com.abhiroop.sentinel.entity.StressTestConfig;
+import com.abhiroop.sentinel.entity.StressTestSummary;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
@@ -37,44 +44,62 @@ public class LoginHistoryService {
                         log.error("Error Creating Login History: {}", throwable.getMessage()));
     }
 
-    private void createMultipleSampleForTime(Duration duration) {
-        //execute stress test
-        final var endTime = Instant.now().plus(duration);
+    private Mono<StressTestSummary> createMultipleSampleForTime(Duration duration) {
+        final var startTime = Instant.now();
+        final var endTime = startTime.plus(duration);
+        final AtomicLong counter = new AtomicLong(0);
 
-        try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        final var scheduler = Schedulers.fromExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
-            while (Instant.now().isBefore(endTime)) {
-                executorService.submit(() -> this.createSampleLoginHistory().block());
-                Thread.sleep(100);
-            }
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            stressTestConfigService.setIsRunningFalse();
-        }
+        return Flux.interval(Duration.ofMillis(100))
+                .takeUntil(i -> Instant.now().isAfter(endTime))
+                .flatMap(tick ->
+                        this.createSampleLoginHistory()
+                                .subscribeOn(scheduler)
+                                .doOnSuccess(res -> counter.incrementAndGet())
+                                .onErrorResume(e ->
+                                        Mono.empty()
+                                )
+                )
+                .then(stressTestConfigService.setIsRunningFalse())
+                .map(config -> StressTestSummary
+                        .builder()
+                        .startTime(startTime)
+                        .endTime(Instant.now())
+                        .recordsCreated(counter.get())
+                        .build()
+                )
+                .publishOn(Schedulers.boundedElastic())
+                .doFinally(signal -> {
+                    if (signal == SignalType.CANCEL) {
+                        stressTestConfigService.setIsRunningFalse().subscribe();
+                    }
+                });
     }
 
-    public void createStressTest(Duration duration) {
-        // get the config to check if running is possible
-        final var config = stressTestConfigService.getConfig();
+    public Mono<StressTestSummary> createStressTest(Duration duration) {
 
-        if (config.isRunning()) return;
+        return stressTestConfigService.getConfig()
+                .flatMap(config -> {
+                    // 1. MUST use 'return' here to stop the chain
+                    if (config.isRunning() || Instant.now().isBefore(config.earliestNextRun())) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "Test already running or cooling down"));
+                    }
 
-        if (Instant.now().isBefore(config.earliestNextRun())) return;
+                    final var updatedConfig = StressTestConfig
+                            .builder()
+                            .id(config.id())
+                            .isRunning(true)
+                            .earliestNextRun(Instant.now().plus(Duration.ofHours(1)))
+                            .build();
 
-        // now save the updated config with new config
-        final var updatedConfig = StressTestConfig
-                .builder()
-                .id(config.id())
-                .isRunning(true)
-                .earliestNextRun(Instant.now().plus(Duration.ofHours(1)))
-                .build();
+                    // now save the updated config with new config
+                    return stressTestConfigService.saveConfig(updatedConfig)
+                            .then(createMultipleSampleForTime(duration))
+                            .subscribeOn(Schedulers.fromExecutor(Executors.newVirtualThreadPerTaskExecutor())); // Don't block the main Event Loop
 
-        stressTestConfigService.saveConfig(updatedConfig);
+                });
 
-        //start stress test
-        Thread.startVirtualThread(() -> createMultipleSampleForTime(duration));
     }
 
 }
