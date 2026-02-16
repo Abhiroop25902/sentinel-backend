@@ -30,13 +30,20 @@ public class LoginHistoryService {
         return loginHistoryRepository.save(loginHistory);
     }
 
+
+    private boolean getRandomBoolean() {
+        return Math.random() < 0.9; //90% should be successful login
+    }
+
     public Mono<LoginHistory> createSampleLoginHistory() {
-        return this.createSampleLoginHistory(
-                        LoginHistory.builder()
-                                .email("abhiroop.m25902@gmail.com")
-                                .timestamp(Instant.now())
-                                .success(true)
-                                .build()
+        return Mono.defer(() ->
+                        this.createSampleLoginHistory(
+                                LoginHistory.builder()
+                                        .email("abhiroop.m25902@gmail.com")
+                                        .timestamp(Instant.now()) // Instant.now() will executed when Mono is subscribed, not when built
+                                        .success(getRandomBoolean())// getRandomBoolean() will executed when Mono is subscribed, not when built
+                                        .build()
+                        )
                 )
                 .doOnSuccess(loginHistory ->
                         log.info("Successfully Created Login History: {}", loginHistory))
@@ -51,7 +58,7 @@ public class LoginHistoryService {
 
         final var scheduler = Schedulers.fromExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
-        return Flux.interval(Duration.ofMillis(100))
+        return Flux.interval(Duration.ofMillis(10))
                 .takeUntil(i -> Instant.now().isAfter(endTime))
                 .flatMap(tick ->
                         this.createSampleLoginHistory()
