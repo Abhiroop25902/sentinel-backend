@@ -56,7 +56,7 @@ public class LoginHistoryService {
         final AtomicLong counter = new AtomicLong(0);
 
 
-        return Flux.interval(Duration.ofMillis(10))
+        return Flux.interval(Duration.ofMillis(1))
                 .takeUntil(i -> Instant.now().isAfter(endTime))
                 .flatMap(tick ->
                                 this.createSampleLoginHistory()
@@ -104,9 +104,7 @@ public class LoginHistoryService {
 
                     // now save the updated config with new config
                     return stressTestConfigService.saveConfig(updatedConfig)
-                            .then(createMultipleSampleForTime(duration))
-                            .subscribeOn(Schedulers.fromExecutor(Executors.newVirtualThreadPerTaskExecutor())); // Don't block the main Event Loop
-
+                            .then(createMultipleSampleForTime(duration));
                 });
 
     }
