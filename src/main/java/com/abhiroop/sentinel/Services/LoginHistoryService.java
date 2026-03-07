@@ -45,6 +45,7 @@ public class LoginHistoryService {
                                         .build()
                         )
                 )
+                .delayElement(Duration.ofMillis((long) (Math.random() * 500)))
                 .doOnSuccess(loginHistory ->
                         log.info("Successfully Created Login History: {}", loginHistory))
                 .doOnError(throwable ->
