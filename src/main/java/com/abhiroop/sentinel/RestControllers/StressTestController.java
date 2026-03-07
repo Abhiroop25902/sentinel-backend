@@ -9,10 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
-import java.util.concurrent.Executors;
 
 @RestController
 @RequestMapping("/api/stress-test")
@@ -27,8 +25,7 @@ public class StressTestController {
                 .map(stressTest -> ResponseEntity
                         .status(HttpStatus.OK)
                         .body(stressTest)
-                )
-                .subscribeOn(Schedulers.fromExecutor(Executors.newVirtualThreadPerTaskExecutor()));
+                );
     }
 
 }

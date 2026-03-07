@@ -12,11 +12,9 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -57,17 +55,20 @@ public class LoginHistoryService {
         final var endTime = startTime.plus(duration);
         final AtomicLong counter = new AtomicLong(0);
 
-        final var scheduler = Schedulers.fromExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
         return Flux.interval(Duration.ofMillis(10))
                 .takeUntil(i -> Instant.now().isAfter(endTime))
                 .flatMap(tick ->
-                        this.createSampleLoginHistory()
-                                .subscribeOn(scheduler)
-                                .doOnSuccess(res -> counter.incrementAndGet())
-                                .onErrorResume(e ->
-                                        Mono.empty()
-                                )
+                                this.createSampleLoginHistory()
+                                        .doOnSuccess(res -> counter.incrementAndGet())
+                                        .onErrorResume(e ->
+                                                Mono.empty()
+                                        )
+                        //this will execute 1000 times per second,
+                        // assuming every pub-sub write takes max 1s (jitter max 0.5s + 0.5s for pub-sub write),
+                        // concurrency 1024 should be sufficient
+                        // (i.e max 1024 execution of above at a time possible, extra waits, creating backpressure)
+                        , 1024
                 )
                 .then(stressTestConfigService.setIsRunningFalse())
                 .map(config -> StressTestSummary
@@ -77,9 +78,9 @@ public class LoginHistoryService {
                         .recordsCreated(counter.get())
                         .build()
                 )
-                .publishOn(Schedulers.boundedElastic())
                 .doFinally(signal -> {
                     if (signal == SignalType.CANCEL) {
+                        //boundedElastic warning is fixed by virtual threads in Spring Boot
                         stressTestConfigService.setIsRunningFalse().subscribe();
                     }
                 });
