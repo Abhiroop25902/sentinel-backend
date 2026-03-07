@@ -26,7 +26,7 @@ public class LoginHistoryService {
     private final LoginHistoryRepository loginHistoryRepository;
     private final StressTestConfigService stressTestConfigService;
 
-    public Mono<LoginHistory> createSampleLoginHistory(LoginHistory loginHistory) {
+    public Mono<LoginHistory> saveLoginHistory(LoginHistory loginHistory) {
         return loginHistoryRepository.save(loginHistory);
     }
 
@@ -37,7 +37,7 @@ public class LoginHistoryService {
 
     public Mono<LoginHistory> createSampleLoginHistory() {
         return Mono.defer(() ->
-                        this.createSampleLoginHistory(
+                        this.saveLoginHistory(
                                 LoginHistory.builder()
                                         .email("abhiroop.m25902@gmail.com")
                                         .timestamp(Instant.now().toEpochMilli()) // Instant.now() will executed when Mono is subscribed, not when built
