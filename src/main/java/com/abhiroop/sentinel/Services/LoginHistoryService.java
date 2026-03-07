@@ -70,7 +70,7 @@ public class LoginHistoryService {
                         // (i.e max 1024 execution of above at a time possible, extra waits, creating backpressure)
                         , 1024
                 )
-                .then(stressTestConfigService.setIsRunningFalse())
+                .then(Mono.defer(stressTestConfigService::setIsRunningFalse))
                 .map(config -> StressTestSummary
                         .builder()
                         .startTime(startTime)
