@@ -40,7 +40,7 @@ public class LoginHistoryService {
                         this.createSampleLoginHistory(
                                 LoginHistory.builder()
                                         .email("abhiroop.m25902@gmail.com")
-                                        .timestamp(Instant.now()) // Instant.now() will executed when Mono is subscribed, not when built
+                                        .timestamp(Instant.now().toEpochMilli()) // Instant.now() will executed when Mono is subscribed, not when built
                                         .success(getRandomBoolean())// getRandomBoolean() will executed when Mono is subscribed, not when built
                                         .build()
                         )
