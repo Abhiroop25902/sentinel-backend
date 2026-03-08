@@ -10,6 +10,7 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
+import com.google.pubsub.v1.TopicName;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -39,7 +40,8 @@ abstract class PubSubRepository<T> {
         return Mono.defer(() -> {
             try {
                 //get data type -> syncing it with topic name for 1 to 1 mapping
-                final String dataType = publisher.getTopicNameString();
+                final String fullTopicName = publisher.getTopicNameString();
+                final String dataType = TopicName.parse(fullTopicName).getTopic();
 
                 //create the data
                 final PubSubMessageData<T> pubsubMessageData = PubSubMessageData.<T>builder()
