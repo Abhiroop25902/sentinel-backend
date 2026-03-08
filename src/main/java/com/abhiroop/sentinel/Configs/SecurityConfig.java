@@ -37,9 +37,9 @@ public class SecurityConfig {
         final var corsConfig = new CorsConfiguration();
 
         corsConfig.setAllowedOrigins(List.of(
-                "http://localhost:3000",
                 "https://sentinel-25902.web.app/",
-                "https://sentinel-25902.firebaseapp.com/"
+                "https://sentinel-25902.firebaseapp.com/",
+                "https://sentinel.abhiroop.dev"
         ));
 
         corsConfig.setAllowedMethods(List.of("GET"));
