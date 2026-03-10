@@ -1,7 +1,7 @@
 package com.abhiroop.sentinel.RestControllers;
 
 import com.abhiroop.sentinel.Services.LoginHistoryService;
-import com.abhiroop.sentinel.entity.StressTestSummary;
+import com.abhiroop.sentinel.dto.StressTestSummaryDto;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +20,7 @@ public class StressTestController {
 
 
     @GetMapping
-    public Mono<ResponseEntity<StressTestSummary>> stressTest() {
+    public Mono<ResponseEntity<StressTestSummaryDto>> stressTest() {
         return loginHistoryService.createStressTest(Duration.ofSeconds(30))
                 .map(stressTest -> ResponseEntity
                         .status(HttpStatus.OK)

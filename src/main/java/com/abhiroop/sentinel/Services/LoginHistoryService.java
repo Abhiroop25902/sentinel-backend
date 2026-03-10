@@ -2,8 +2,8 @@ package com.abhiroop.sentinel.Services;
 
 import com.abhiroop.sentinel.Repository.LoginHistoryRepository;
 import com.abhiroop.sentinel.dto.LoginHistoryDto;
+import com.abhiroop.sentinel.dto.StressTestSummaryDto;
 import com.abhiroop.sentinel.entity.StressTestConfig;
-import com.abhiroop.sentinel.entity.StressTestSummary;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -50,7 +50,7 @@ public class LoginHistoryService {
                         log.error("Error Creating Login History: {}", throwable.getMessage()));
     }
 
-    private Mono<StressTestSummary> createMultipleSampleForTime(Duration duration) {
+    private Mono<StressTestSummaryDto> createMultipleSampleForTime(Duration duration) {
         final var startTime = Instant.now();
         final var endTime = startTime.plus(duration);
         final AtomicLong counter = new AtomicLong(0);
@@ -71,7 +71,7 @@ public class LoginHistoryService {
                         , 1024
                 )
                 .then(Mono.defer(stressTestConfigService::setIsRunningFalse))
-                .map(config -> StressTestSummary
+                .map(config -> StressTestSummaryDto
                         .builder()
                         .startTime(startTime)
                         .endTime(Instant.now())
@@ -86,7 +86,7 @@ public class LoginHistoryService {
                 });
     }
 
-    public Mono<StressTestSummary> createStressTest(Duration duration) {
+    public Mono<StressTestSummaryDto> createStressTest(Duration duration) {
 
         return stressTestConfigService.getConfig()
                 .flatMap(config -> {
