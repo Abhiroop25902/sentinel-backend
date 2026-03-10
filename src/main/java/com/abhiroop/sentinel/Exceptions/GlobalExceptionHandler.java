@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now())
                 .build();
 
-        log.error(details.toString(), request.getDescription(false));
+        log.error(error.toString(), request.getDescription(false));
 
         return new ResponseEntity<>(details, HttpStatus.INTERNAL_SERVER_ERROR);
     }
