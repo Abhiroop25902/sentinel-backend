@@ -1,7 +1,7 @@
 package com.abhiroop.sentinel.Services;
 
 import com.abhiroop.sentinel.Repository.LoginHistoryRepository;
-import com.abhiroop.sentinel.entity.LoginHistory;
+import com.abhiroop.sentinel.dto.LoginHistoryDto;
 import com.abhiroop.sentinel.entity.StressTestConfig;
 import com.abhiroop.sentinel.entity.StressTestSummary;
 import lombok.AllArgsConstructor;
@@ -24,8 +24,8 @@ public class LoginHistoryService {
     private final LoginHistoryRepository loginHistoryRepository;
     private final StressTestConfigService stressTestConfigService;
 
-    public Mono<LoginHistory> saveLoginHistory(LoginHistory loginHistory) {
-        return loginHistoryRepository.save(loginHistory);
+    public Mono<LoginHistoryDto> saveLoginHistory(LoginHistoryDto loginHistoryDto) {
+        return loginHistoryRepository.save(loginHistoryDto);
     }
 
 
@@ -33,10 +33,10 @@ public class LoginHistoryService {
         return Math.random() < 0.9; //90% should be successful login
     }
 
-    public Mono<LoginHistory> createSampleLoginHistory() {
+    public Mono<LoginHistoryDto> createSampleLoginHistory() {
         return Mono.defer(() ->
                         this.saveLoginHistory(
-                                LoginHistory.builder()
+                                LoginHistoryDto.builder()
                                         .email("abhiroop.m25902@gmail.com")
                                         .timestamp(Instant.now().toEpochMilli()) // Instant.now() will executed when Mono is subscribed, not when built
                                         .success(getRandomBoolean())// getRandomBoolean() will executed when Mono is subscribed, not when built
@@ -44,8 +44,8 @@ public class LoginHistoryService {
                         )
                 )
                 .delayElement(Duration.ofMillis((long) (Math.random() * 500)))
-                .doOnSuccess(loginHistory ->
-                        log.info("Successfully Created Login History: {}", loginHistory))
+                .doOnSuccess(loginHistoryDto ->
+                        log.info("Successfully Created Login History: {}", loginHistoryDto))
                 .doOnError(throwable ->
                         log.error("Error Creating Login History: {}", throwable.getMessage()));
     }

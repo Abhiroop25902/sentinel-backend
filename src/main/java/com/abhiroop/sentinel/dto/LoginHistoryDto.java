@@ -1,10 +1,10 @@
-package com.abhiroop.sentinel.entity;
+package com.abhiroop.sentinel.dto;
 
 import com.google.cloud.firestore.annotation.DocumentId;
 import lombok.Builder;
 
 @Builder(toBuilder = true)
-public record LoginHistory(
+public record LoginHistoryDto(
         @DocumentId
         String id,
         String email,
