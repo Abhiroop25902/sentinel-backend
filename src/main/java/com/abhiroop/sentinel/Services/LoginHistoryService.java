@@ -57,6 +57,7 @@ public class LoginHistoryService {
 
 
         return Flux.interval(Duration.ofMillis(1))
+                .onBackpressureDrop(tick -> log.warn("Dropped tick {} - System at capacity!", tick))
                 .takeUntil(i -> Instant.now().isAfter(endTime))
                 .flatMap(tick ->
                                 this.createSampleLoginHistory()
@@ -68,7 +69,8 @@ public class LoginHistoryService {
                         // assuming every pub-sub write takes max 1s (jitter max 0.5s + 0.5s for pub-sub write),
                         // concurrency 1024 should be sufficient
                         // (i.e max 1024 execution of above at a time possible, extra waits, creating backpressure)
-                        , 1024
+                        , 1024,
+                        1024
                 )
                 .then(Mono.defer(stressTestConfigService::setIsRunningFalse))
                 .map(config -> StressTestSummaryDto
