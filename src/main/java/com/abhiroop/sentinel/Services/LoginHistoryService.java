@@ -15,6 +15,7 @@ import reactor.core.publisher.SignalType;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -37,6 +38,7 @@ public class LoginHistoryService {
         return Mono.defer(() ->
                         this.saveLoginHistory(
                                 LoginHistoryDto.builder()
+                                        .id(UUID.randomUUID().toString())
                                         .email("abhiroop.m25902@gmail.com")
                                         .timestamp(Instant.now().toEpochMilli()) // Instant.now() will executed when Mono is subscribed, not when built
                                         .success(getRandomBoolean())// getRandomBoolean() will executed when Mono is subscribed, not when built
