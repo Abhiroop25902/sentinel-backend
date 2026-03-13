@@ -56,7 +56,7 @@ public class LoginHistoryService {
         final AtomicLong counter = new AtomicLong(0);
 
 
-        return Flux.interval(Duration.ofMillis(1))
+        return Flux.interval(Duration.ofMillis(100))
                 .onBackpressureDrop(tick -> log.warn("Dropped tick {} - System at capacity!", tick))
                 .takeUntil(i -> Instant.now().isAfter(endTime))
                 .flatMap(tick ->
@@ -64,12 +64,8 @@ public class LoginHistoryService {
                                         .doOnSuccess(res -> counter.incrementAndGet())
                                         .onErrorResume(e ->
                                                 Mono.empty()
-                                        )
-                        //this will execute 1000 times per second,
-                        // assuming every pub-sub write takes max 1s (jitter max 0.5s + 0.5s for pub-sub write),
-                        // concurrency 1024 should be sufficient
-                        // (i.e max 1024 execution of above at a time possible, extra waits, creating backpressure)
-                        , 1024,
+                                        ),
+                        1024,
                         1024
                 )
                 .then(Mono.defer(stressTestConfigService::setIsRunningFalse))
