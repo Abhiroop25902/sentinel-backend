@@ -36,6 +36,7 @@ dependencies {
     implementation 'com.google.cloud:spring-cloud-gcp-starter-data-firestore'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'com.google.cloud:spring-cloud-gcp-starter-pubsub'
+    implementation 'com.google.firebase:firebase-admin:9.8.0'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'

@@ -18,12 +18,15 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+
 @Slf4j
 @Service
 @AllArgsConstructor
 public class LoginHistoryService {
+    private static final int DEFAULT_RECORD_COUNT = 3000;
     private final LoginHistoryRepository loginHistoryRepository;
     private final StressTestConfigService stressTestConfigService;
+    private final PublisherConfigService publisherConfigService;
 
     public Mono<LoginHistoryDto> saveLoginHistory(LoginHistoryDto loginHistoryDto) {
         return loginHistoryRepository.save(loginHistoryDto);
@@ -57,9 +60,11 @@ public class LoginHistoryService {
         final var endTime = startTime.plus(duration);
         final AtomicLong counter = new AtomicLong(0);
 
+        final int recordCount = publisherConfigService.getConfig(
+                PublisherConfigServiceKey.RECORD_COUNT, DEFAULT_RECORD_COUNT, Integer::parseInt
+        );
 
-        return Flux.interval(Duration.ofMillis(100))
-                .onBackpressureDrop(tick -> log.warn("Dropped tick {} - System at capacity!", tick))
+        return Flux.range(0, recordCount)
                 .takeUntil(i -> Instant.now().isAfter(endTime))
                 .flatMap(tick ->
                                 this.createSampleLoginHistory()
